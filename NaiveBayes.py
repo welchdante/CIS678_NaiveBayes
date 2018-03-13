@@ -14,8 +14,8 @@ class Document():
 
 	def get_word_count(self, word):
 		res = 0
-		if(word in self.wordBag):
-			res = self.wordBag[word]
+		if(word in self.bag_of_words):
+			res = self.bag_of_words[word]
 
 		return res
 
