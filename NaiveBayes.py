@@ -48,12 +48,11 @@ def stem_doc(tokens):
 	return stemmed_doc
 
 class Document():
-	def __init__(self, text):
+	def __init__(self, list_of_words):
 		self.bag_of_words = {}
 		self.size = 0
-		text = text.split()
 
-		for word in text:
+		for word in list_of_words:
 			if word in self.bag_of_words:
 				self.bag_of_words[word] += 1
 			else:
@@ -68,20 +67,27 @@ class Document():
 		return res
 
 class NaiveBayes():
-	def __init__(self):
-		self.documents = []
+	def __init__(self, filename):
+		self.positive_documents = []
+		self.negative_documents = []
+		self.all_documents = []
 		self.num_positive = 0
 		self.num_negative = 0
-		#self.count = 0
+		self.vocabulary = load_doc(filename).split()
+
 
 	def iterate_docs(self, directory):
 		for filename in listdir(directory):
 			path = directory + '/' + filename
-			#self.count += 1
-			#if self.count < 10:
 			self.count_total(directory)
 			document = self.get_document(path)
-			self.documents.append(document)
+			if "pos" in directory:
+				self.positive_documents.append(document)
+			elif "neg" in directory:
+				self.negative_documents.append(document)
+			else:
+				"There was an error"
+			self.all_documents.append(document)
 
 	def get_document(self, path):
 		doc = load_doc(path)
@@ -98,14 +104,18 @@ class NaiveBayes():
 			print("There was an error")
 
 	def calc_prior_probability(self):
-		for doc in self.documents:
-			print(doc)
+		for word in self.vocabulary:
+			print(word)
+
+			
 
 
-bayes = NaiveBayes()
+bayes = NaiveBayes('vocab.txt')
 bayes.iterate_docs('practice/train/pos')
-print(bayes.documents)
 bayes.iterate_docs('practice/train/neg')
+bayes.calc_prior_probability()
+
+
 
 
 
