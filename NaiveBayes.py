@@ -103,9 +103,24 @@ class NaiveBayes():
 		else:
 			print("There was an error")
 
-	def calc_prior_probability(self):
+	def calc_probabilities(self):
 		for word in self.vocabulary:
-			print(word)
+			pos_word_count = 0
+			neg_word_count = 0
+
+			for doc in self.positive_documents:
+				current_doc = Document(doc)
+				pos_word_count += current_doc.get_word_count(word)
+
+			#print(word + ": %d", pos_word_count)
+			for doc in self.negative_documents:
+				current_doc = Document(doc)
+				neg_word_count += current_doc.get_word_count(word)
+			
+			prob_pos = pos_word_count / self.num_positive
+			prob_neg = neg_word_count / self.num_negative
+
+			print(word + "\t\t\t positive: %3f \t negative: %3f" % (prob_pos, prob_neg))
 
 			
 
@@ -113,7 +128,7 @@ class NaiveBayes():
 bayes = NaiveBayes('vocab.txt')
 bayes.iterate_docs('practice/train/pos')
 bayes.iterate_docs('practice/train/neg')
-bayes.calc_prior_probability()
+bayes.calc_probabilities()
 
 
 
