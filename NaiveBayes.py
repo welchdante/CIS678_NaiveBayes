@@ -5,12 +5,25 @@ from collections import Counter
 from pprint import pprint
 import string
 import re
+import csv
 
 def load_doc(filename):
 	file = open(filename, 'r')
 	text = file.read()
 	file.close()
 	return text
+
+def dict_to_csv(dictionary):
+	with open("frequency_table.csv", "w") as f:
+		csv.writer(f).writerows((k,) + v for k, v in dictionary.items())
+
+def csv_to_dict(filename):
+	out_dict = {}
+	with open(filename, 'r') as csvfile:
+		reader = csv.reader(csvfile, delimiter=',')
+		for row in reader:
+			out_dict[row[0]] = int(row[1]), int(row[2])
+	return out_dict
 
 def clean_doc(doc):
 	tokens = doc.split()
@@ -73,8 +86,10 @@ class NaiveBayes():
 		self.all_documents = []
 		self.num_positive = 0
 		self.num_negative = 0
+		self.current_doc = []
 		self.vocabulary = load_doc(filename).split()
-
+		self.frequency_table = {}
+		self.frequency_table = self.frequency_table.fromkeys(self.vocabulary)
 
 	def iterate_docs(self, directory):
 		for filename in listdir(directory):
@@ -103,40 +118,38 @@ class NaiveBayes():
 		else:
 			print("There was an error")
 
-	def calc_probabilities(self):
+	def calc_frequencies(self):
 		for word in self.vocabulary:
 			pos_word_count = 0
 			neg_word_count = 0
 
-			for doc in self.positive_documents:
-				current_doc = Document(doc)
+			for i in range(len(self.positive_documents)):
+				current_doc = Document(self.positive_documents[i])
 				pos_word_count += current_doc.get_word_count(word)
+				self.positive_documents[i] = self.remove_word(word, self.positive_documents[i])
 
-			#print(word + ": %d", pos_word_count)
-			for doc in self.negative_documents:
-				current_doc = Document(doc)
+			for i in range(len(self.negative_documents)):
+				current_doc = Document(self.negative_documents[i])
 				neg_word_count += current_doc.get_word_count(word)
-			
-			prob_pos = pos_word_count / self.num_positive
-			prob_neg = neg_word_count / self.num_negative
+				self.negative_documents[i] = self.remove_word(word, self.negative_documents[i])
 
-			print(word + "\t\t\t positive: %3f \t negative: %3f" % (prob_pos, prob_neg))
+			self.frequency_table[word] = (pos_word_count, neg_word_count)
 
-			
+		dict_to_csv(self.frequency_table)
+
+			#prob_pos = pos_word_count / self.num_positive
+			#prob_neg = neg_word_count / self.num_negative
+
+			#print(word + "\t\t\t positive: %3f \t negative: %3f" % (prob_pos, prob_neg))
+
+	def remove_word(self, word, doc):
+		if word in doc:
+			doc.remove(word)
+		return doc
 
 
-bayes = NaiveBayes('vocab.txt')
-bayes.iterate_docs('practice/train/pos')
-bayes.iterate_docs('practice/train/neg')
-bayes.calc_probabilities()
+# bayes = NaiveBayes('vocab.txt')
+  bayes.iterate_docs('practice/train/pos')
+  bayes.iterate_docs('practice/train/neg')
+# bayes.calc_frequencies()
 
-
-
-
-
-# doc1 = Document("hate shit sue")
-# doc2 = Document("love happy bob")
-
-# vocab = Counter()
-# process_docs('imdb/train/pos', vocab)
-# # process_docs('imdb/train/neg', vocab)
