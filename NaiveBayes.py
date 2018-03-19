@@ -15,7 +15,7 @@ def load_doc(filename):
 	return text
 
 def dict_to_csv(dictionary):
-	with open("full_frequency_table.csv", "w") as f:
+	with open("frequency_table.csv", "w") as f:
 		csv.writer(f).writerows((k,) + v for k, v in dictionary.items())
 
 def csv_to_dict(filename):
@@ -90,7 +90,8 @@ class NaiveBayes():
 		self.current_doc = []
 		self.vocabulary = load_doc(filename).split()
 		self.frequency_table = {}
-		#self.frequency_table = self.frequency_table.fromkeys(self.vocabulary)
+		self.pos_accuracy = 0
+		self.neg_accuracy = 0
 
 	def append_docs(self, directory):
 		for filename in listdir(directory):
@@ -138,11 +139,6 @@ class NaiveBayes():
 
 		dict_to_csv(self.frequency_table)
 
-			#prob_pos = pos_word_count / self.num_positive
-			#prob_neg = neg_word_count / self.num_negative
-
-			#print(word + "\t\t\t positive: %3f \t negative: %3f" % (prob_pos, prob_neg))
-
 	def remove_word(self, word, doc):
 		if word in doc:
 			doc.remove(word)
@@ -159,6 +155,11 @@ class NaiveBayes():
 		return path
 
 	def predict(self, directory, pos_or_neg):
+		num_correct = 0
+		total_guesses = 0
+		pos_predictions = 0
+		neg_predictions = 0 
+		equal_pos_neg = 0
 		for filename in listdir(directory):
 			probabilities_pos = []
 			probabilities_neg = []
@@ -169,7 +170,7 @@ class NaiveBayes():
 			stemmed_doc = stem_doc(tokens)
 			doc = Document(stemmed_doc)
 			frequency_table = csv_to_dict('full_frequency_table.csv')
-			getcontext().prec = 100
+			getcontext().prec = 500
 			for word in doc.bag_of_words:
 				if word in frequency_table:
 					word_freq_pos = frequency_table[word][0]
@@ -178,8 +179,7 @@ class NaiveBayes():
 					weighted_prob_neg = Decimal(word_freq_neg / self.num_negative)
 					probabilities_pos.append(weighted_prob_pos)
 					probabilities_neg.append(weighted_prob_neg)
-					
-			
+						
 			total_prob_pos = Decimal(len(self.positive_documents) / len(self.all_documents))
 			total_prob_neg = Decimal(len(self.negative_documents) / len(self.all_documents))
 			probabilities_pos.append(total_prob_pos)
@@ -201,21 +201,32 @@ class NaiveBayes():
 			prob_pos = Decimal(prob_pos / p_x)
 			prob_neg = Decimal(prob_neg / p_x)
 
-			#print(p_x)
-			#print(type(prob_pos))
-			print("pos: ", prob_pos)
-			print("neg: ", prob_neg)
-			#print( "Document: positive: %5f \t negative: %5f" % (prob_pos, prob_neg))
+			if prob_pos > prob_neg:
+				pos_predictions += 1
+			elif prob_neg > prob_pos:
+				neg_predictions += 1
+			else: 
+				equal_pos_neg += 1
 
+		if pos_or_neg == 'pos':
+			self.pos_accuracy = pos_predictions / (pos_predictions + neg_predictions)
+		else:
+			self.neg_accuracy = neg_predictions / (pos_predictions + neg_predictions)
 
+vocab = Counter()
+process_docs('imdb/train/pos', vocab)
+process_docs('imdb/train/neg', vocab)
+process_docs('imdb/test/neg', vocab)
+process_docs('imdb/test/pos', vocab)
+min_occurance = 3
+tokens = [k for k,c in vocab.items() if c >= min_occurance]
+save_list(tokens, 'vocab.txt')
 bayes = NaiveBayes('vocab.txt')
 bayes.append_docs('imdb/train/pos')
 bayes.append_docs('imdb/train/neg')
-#bayes.calc_frequencies()
-#bayes.frequency_table = csv_to_dict('full_frequency_table.csv')
+bayes.calc_frequencies()
+bayes.frequency_table = csv_to_dict('frequency_table.csv')
 bayes.predict('imdb/test/pos', 'pos')
 bayes.predict('imdb/test/neg', 'neg')
-
-
-
-
+print(bayes.pos_accuracy)
+print(bayes.neg_accuracy)
